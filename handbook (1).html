@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Handbook — Cautio Command Center | Mohammad Ali</title>
+<meta name="description" content="Documentation of the 24x7 fleet-monitoring platform built by Mohammad Ali at Cautio: every screen, the rules the system enforces, and the engineering decisions behind them.">
+<meta name="author" content="Mohammad Ali">
+<link rel="canonical" href="https://portfolio-mohammad-ali.vercel.app/handbook.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Platform Handbook — Cautio Command Center | Mohammad Ali">
+<meta property="og:description" content="Documentation of the 24x7 fleet-monitoring platform built by Mohammad Ali at Cautio: every screen, the rules the system enforces, and the engineering decisions behind them.">
+<meta property="og:url" content="https://portfolio-mohammad-ali.vercel.app/handbook.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Platform Handbook — Cautio Command Center | Mohammad Ali">
+<meta name="twitter:description" content="Documentation of the 24x7 fleet-monitoring platform built by Mohammad Ali at Cautio: every screen, the rules the system enforces, and the engineering decisions behind them.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231F3864'/><text y='.9em' x='50%' text-anchor='middle' font-size='62' font-family='Arial' font-weight='bold' fill='white'>M</text></svg>">
+<style>
+/* Standalone hosting only. A grid item's default min-width is auto, so the
+   wide table inside the reference section was setting the minimum width of
+   the whole page and pushing it past a phone screen. The table still scrolls
+   inside its own container. */
+html,body{max-width:100%}
+.cols,.cols>*{min-width:0}
+.wrap{overflow-x:clip}
+</style>
+</head>
+<body style="margin:0">
+<div style="background:#12151B;color:#F2F3F0;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.04em">
+  <div style="max-width:1140px;margin:0 auto;padding:11px 26px;display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+    <a href="https://portfolio-mohammad-ali.vercel.app/" style="color:#F0A44A;text-decoration:none;font-weight:600">&larr; Mohammad Ali &middot; Portfolio</a>
+    <span style="color:#868C94">Work sample &middot; platform documentation written by Mohammad Ali, Data Analyst at Cautio</span>
+  </div>
+</div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#FFFFFF; --surface:#FAFBF9; --surface-2:#F1F3EF;
+  --ink:#0E120E; --ink-2:#3B433A; --muted:#6E756B;
+  --line:#E4E8E0; --line-2:#CDD3C8;
+  --accent:#0F9B52; --accent-deep:#0B6B39; --accent-soft:#E8F5ED;
+  --amber:#9A6100; --amber-soft:#FAEFD9;
+  --red:#B02219; --red-soft:#FAE5E3;
+  /* The console panel keeps its own palette in both themes: it is a picture
+     of the product, not a surface of this page. */
+  --panel:#0B0F0B; --panel-2:#141A14; --panel-line:#233023;
+  --panel-ink:#FFFFFF; --panel-ink-2:#A9B3A6; --panel-accent:#94EC8E;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#080A08; --surface:#111411; --surface-2:#181C17;
+    --ink:#F3F5F1; --ink-2:#C6CBC2; --muted:#8A9186;
+    --line:#212520; --line-2:#30362E;
+    --accent:#94EC8E; --accent-deep:#BDF5B8; --accent-soft:#94EC8E1C;
+    --amber:#FFC107; --amber-soft:#FFC1071C;
+    --red:#FF6B6B; --red-soft:#FF6B6B1C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#080A08; --surface:#111411; --surface-2:#181C17;
+  --ink:#F3F5F1; --ink-2:#C6CBC2; --muted:#8A9186;
+  --line:#212520; --line-2:#30362E;
+  --accent:#94EC8E; --accent-deep:#BDF5B8; --accent-soft:#94EC8E1C;
+  --amber:#FFC107; --amber-soft:#FFC1071C;
+  --red:#FF6B6B; --red-soft:#FF6B6B1C;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15.5px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:Archivo,"IBM Plex Sans",sans-serif; margin:0; text-wrap:balance; letter-spacing:-.022em}
+p{margin:0}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:3px}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.9em}
+.wrap{max-width:1140px; margin:0 auto; padding:0 26px}
+
+/* ══ WORDMARK ══════════════════════════════════════════════ */
+.wordmark{font-family:Archivo,sans-serif; font-weight:800; letter-spacing:-.035em; line-height:1; display:inline-block}
+.wordmark .dot-i{position:relative; display:inline-block}
+/* The tittle of the "i", in the brand green. Archivo's own tittle is a
+   square, so it is masked out in the surrounding colour and a round dot drawn
+   over it. Position is measured against the real baseline at load time, so
+   the mark holds at any size and survives a font fallback. */
+.wordmark .dot-i::before,
+.wordmark .dot-i::after{content:''; position:absolute; left:var(--dot-x,50%); transform:translateX(-50%)}
+.wordmark .dot-i::before{
+  top:calc(var(--dot-y,.09em) - var(--dot-d,.168em) * .22);
+  width:calc(var(--dot-d,.168em) * 1.5); height:calc(var(--dot-d,.168em) * 1.5);
+  background:var(--wm-bg,var(--paper));
+}
+.wordmark .dot-i::after{
+  top:var(--dot-y,.09em); width:var(--dot-d,.168em); height:var(--dot-d,.168em);
+  border-radius:50%; background:var(--wm-dot,var(--accent));
+}
+.wordmark .bl{display:inline-block; width:0; height:0; overflow:hidden}
+
+/* ══ HERO ══════════════════════════════════════════════════ */
+.hero{
+  background:var(--panel); color:var(--panel-ink); position:relative; overflow:hidden;
+  --wm-bg:var(--panel); --wm-dot:var(--panel-accent);
+}
+.hero::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(to right, rgba(148,236,142,.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148,236,142,.055) 1px, transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+  -webkit-mask-image:radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+}
+.hero .wrap{position:relative; padding-top:26px; padding-bottom:56px}
+.herobar{
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+  padding:14px 0 30px; border-bottom:1px solid var(--panel-line); flex-wrap:wrap;
+}
+.herobar .wordmark{font-size:27px; color:var(--panel-ink)}
+.herobar .meta{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--panel-ink-2); display:flex; align-items:center; gap:9px}
+.dotlive{width:7px; height:7px; border-radius:50%; background:var(--panel-accent); box-shadow:0 0 0 3px rgba(148,236,142,.16)}
+.hero .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.26em; text-transform:uppercase; color:var(--panel-accent); margin-top:46px}
+.hero h1{
+  font-size:clamp(34px,5.6vw,60px); font-weight:700; line-height:1.05;
+  margin-top:20px; max-width:19ch; color:#fff;
+}
+.hero h1 em{font-style:normal; color:var(--panel-accent)}
+.hero .sub{margin-top:22px; max-width:60ch; font-size:17.5px; color:var(--panel-ink-2)}
+.hero .role{
+  margin-top:30px; display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap;
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--panel-ink-2);
+  border:1px solid var(--panel-line); border-radius:100px; padding:8px 15px;
+}
+.hero .role b{color:var(--panel-accent); font-weight:600}
+.metrics{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+  gap:1px; background:var(--panel-line); border:1px solid var(--panel-line);
+  border-radius:10px; overflow:hidden; margin-top:44px;
+}
+.metrics > div{background:var(--panel-2); padding:18px 16px}
+.metrics .v{font-family:Archivo,sans-serif; font-size:27px; font-weight:700; letter-spacing:-.03em; color:#fff; font-variant-numeric:tabular-nums}
+.metrics .k{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--panel-ink-2); margin-top:6px; line-height:1.5}
+
+/* ══ SECTIONS ══════════════════════════════════════════════ */
+main{padding-bottom:100px}
+section{scroll-margin-top:22px}
+section + section{margin-top:78px}
+.sec-head{margin-bottom:32px; border-top:3px solid var(--ink); padding-top:18px}
+.sec-head .kicker{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+.sec-head h2{font-size:31px; font-weight:700; margin-top:9px}
+.sec-head p{margin-top:11px; color:var(--ink-2); max-width:70ch}
+
+.cols{display:grid; grid-template-columns:1fr; gap:50px; margin-top:64px}
+@media (min-width:1040px){ .cols{grid-template-columns:208px minmax(0,1fr); gap:64px} }
+.toc{align-self:start}
+@media (min-width:1040px){ .toc{position:sticky; top:26px} }
+.toc h4{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:13px}
+.toc ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+.toc a{display:block; padding:7px 12px; border-left:2px solid var(--line); color:var(--ink-2); text-decoration:none; font-size:13.5px}
+.toc a:hover{color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft)}
+.toc a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.toc a[aria-current="true"]{color:var(--ink); font-weight:600; border-left-color:var(--accent); background:var(--accent-soft)}
+
+/* Hairline progress bar: a 14-section document benefits from knowing how
+   much is left. Purely decorative, so it is hidden from assistive tech. */
+.readbar{position:fixed; inset:0 auto auto 0; height:2px; width:100%;
+  transform:scaleX(0); transform-origin:0 50%; background:var(--accent);
+  z-index:50; pointer-events:none}
+@media print{ .readbar{display:none} }
+@media (prefers-reduced-motion: no-preference){ .readbar{transition:transform .08s linear} }
+
+/* ══ BRIEF ═════════════════════════════════════════════════ */
+.brief{display:grid; grid-template-columns:1fr; gap:26px}
+@media (min-width:800px){ .brief{grid-template-columns:1fr 1fr; gap:40px} }
+.brief h3{font-size:17px; font-weight:700; margin-bottom:9px}
+.brief p{color:var(--ink-2); font-size:15px}
+.brief p + p{margin-top:10px}
+.brief .lbl{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent); margin-bottom:11px}
+
+.stack{margin-top:34px; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.stack > .r{display:grid; grid-template-columns:1fr; gap:2px; padding:13px 17px; border-bottom:1px solid var(--line); background:var(--surface)}
+@media (min-width:640px){ .stack .r{grid-template-columns:150px minmax(0,1fr); gap:20px; align-items:baseline} }
+.stack .r:last-child{border-bottom:none}
+.stack .t{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted)}
+.stack .v{font-size:14.5px; color:var(--ink-2)}
+.stack .v b{color:var(--ink); font-weight:600}
+
+/* ══ PROBLEMS ══════════════════════════════════════════════ */
+.probs{display:flex; flex-direction:column; gap:0}
+.probs article{padding:30px 0; border-bottom:1px solid var(--line)}
+.probs .no{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase}
+.probs h3{font-size:clamp(20px,2.5vw,25px); font-weight:700; margin-top:10px; line-height:1.2; max-width:30ch}
+.probs .pq{margin-top:14px; display:grid; grid-template-columns:1fr; gap:14px}
+@media (min-width:820px){ .probs .pq{grid-template-columns:1fr 1fr; gap:28px} }
+.probs .pq h4{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:6px;
+}
+.probs .pq p{font-size:14.5px; color:var(--ink-2)}
+.probs .pq p b{color:var(--ink); font-weight:600}
+.probs .out{
+  margin-top:16px; padding:12px 16px; border-left:3px solid var(--accent);
+  background:var(--accent-soft); border-radius:0 8px 8px 0;
+  font-size:14.5px; color:var(--accent-deep);
+}
+.probs .out b{font-weight:700}
+
+/* ══ TIER 1 CAPABILITIES ═══════════════════════════════════ */
+.sig article{padding:30px 0; border-bottom:1px solid var(--line)}
+.sig .top{display:flex; align-items:center; gap:13px; margin-bottom:13px; flex-wrap:wrap}
+.sig .idx{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; color:var(--paper); background:var(--accent); border-radius:4px; padding:4px 8px; letter-spacing:.08em}
+.sig .who{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted)}
+.sig h3{font-size:clamp(21px,2.7vw,27px); font-weight:700; line-height:1.16; max-width:26ch}
+.sig .body{font-size:16px; color:var(--ink-2); margin-top:12px; max-width:68ch}
+.sig .body b{color:var(--ink); font-weight:600}
+.sig .prac{margin-top:15px; padding:13px 16px; background:var(--accent-soft); border-radius:8px; font-size:14.5px; color:var(--accent-deep); max-width:68ch}
+.sig .prac span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; display:block; margin-bottom:4px; opacity:.85}
+
+/* ══ TIER 2 RULES ══════════════════════════════════════════ */
+.inv{background:var(--panel); border-radius:14px; padding:38px 32px 42px; color:var(--panel-ink)}
+.inv .hd{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--panel-accent)}
+.inv .hdl{font-family:Archivo,sans-serif; font-size:29px; font-weight:700; margin:11px 0 8px; letter-spacing:-.025em; color:#fff}
+.inv .hdp{font-size:15.5px; color:var(--panel-ink-2); max-width:66ch; margin-bottom:34px}
+.big6{display:grid; grid-template-columns:1fr; gap:26px; margin:0; padding:0}
+@media (min-width:800px){ .big6{grid-template-columns:1fr 1fr; gap:30px 40px} }
+.big6 li{list-style:none; border-top:2px solid var(--panel-accent); padding-top:15px}
+.big6 h4{font-size:19px; font-weight:700; color:#fff; margin-bottom:8px; letter-spacing:-.02em; line-height:1.24}
+.big6 p{font-size:14.5px; color:var(--panel-ink-2); line-height:1.56}
+.big6 p b{color:#E2E7DE; font-weight:600}
+.inv ul.rest{list-style:none; margin:36px 0 0; padding:26px 0 0; border-top:1px solid var(--panel-line); display:grid; grid-template-columns:1fr; gap:16px}
+@media (min-width:800px){ .inv ul.rest{grid-template-columns:1fr 1fr; gap:18px 40px} }
+.inv ul.rest li{display:grid; grid-template-columns:16px minmax(0,1fr); gap:11px; align-items:start}
+.inv ul.rest .b{color:var(--panel-accent); font-size:13px; line-height:1.5}
+.inv ul.rest strong{color:#fff; font-weight:600; font-size:14.5px; display:block; margin-bottom:2px}
+.inv ul.rest span{font-size:13.5px; color:var(--panel-ink-2); line-height:1.5}
+
+/* ══ TIER 3 REFERENCE ══════════════════════════════════════ */
+.rows{display:flex; flex-direction:column; border-top:1px solid var(--line)}
+.row{display:grid; grid-template-columns:1fr; gap:5px; padding:15px 0; border-bottom:1px solid var(--line)}
+@media (min-width:700px){ .row{grid-template-columns:222px minmax(0,1fr); gap:28px; align-items:baseline} }
+.row .nm{font-weight:600; font-size:14.5px}
+.row .ds{color:var(--ink-2); font-size:14.5px}
+.row .ds b{font-weight:600; color:var(--ink)}
+.row.key{border-left:3px solid var(--accent); background:var(--accent-soft); margin:0 -18px; padding:17px 18px; border-bottom-color:transparent; border-radius:0 6px 6px 0}
+@media (min-width:700px){ .row.key{grid-template-columns:222px minmax(0,1fr)} }
+.row.key .nm{font-size:15.5px; color:var(--accent-deep); display:flex; flex-direction:column; gap:6px; align-items:flex-start}
+.row.key .nm i{font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--paper); background:var(--accent); padding:3px 7px; border-radius:3px; order:-1}
+
+kbd{font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:500; background:var(--surface-2); border:1px solid var(--line-2); border-bottom-width:2px; border-radius:5px; padding:1px 6px; color:var(--ink); white-space:nowrap}
+.chip{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:4px; vertical-align:2px; white-space:nowrap}
+.chip.g{background:var(--accent-soft); color:var(--accent-deep)}
+.chip.a{background:var(--amber-soft); color:var(--amber)}
+.chip.r{background:var(--red-soft); color:var(--red)}
+.chip.n{background:var(--surface-2); color:var(--muted)}
+
+h3.grp{font-size:11px; font-weight:600; font-family:"IBM Plex Mono",monospace; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin:42px 0 15px}
+h3.grp:first-of-type{margin-top:0}
+
+.note{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:18px 20px; margin:26px 0; font-size:14.5px; color:var(--ink-2)}
+.note b{color:var(--ink)}
+
+.tw{overflow-x:auto; margin:24px 0; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:470px}
+th,td{text-align:left; padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+th{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); background:var(--surface-2)}
+td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600}
+
+.demo{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin:22px 0; font-family:"IBM Plex Mono",monospace; font-size:13px; display:flex; flex-direction:column; gap:13px; overflow-x:auto}
+.demo .cl{color:var(--ink); font-weight:600}
+.demo .mt{color:var(--muted)}
+.demo .mt .up{color:var(--amber)}
+.demo .mt .me{color:var(--accent-deep)}
+.demo .mt .no{color:var(--red); font-weight:600}
+
+/* ══ FOOTER ════════════════════════════════════════════════ */
+footer{background:var(--panel); color:var(--panel-ink); --wm-bg:var(--panel); --wm-dot:var(--panel-accent)}
+footer .wrap{padding-top:44px; padding-bottom:48px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:20px 40px; align-items:flex-end}
+footer .wordmark{font-size:28px; color:#fff}
+footer .ft{font-size:14px; color:var(--panel-ink-2); margin-top:10px; max-width:46ch}
+footer .fm{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--panel-ink-2); text-align:right}
+
+/* ══ PRINT ═════════════════════════════════════════════════ */
+@media print{
+  @page{size:A4; margin:14mm 14mm 16mm}
+  html,body{background:#fff !important}
+  body{font-size:10.5pt; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .wrap{max-width:none; padding:0}
+  .toc{display:none}
+  .cols{display:block; margin-top:0}
+  .hero{border-radius:0}
+  .hero .wrap{padding:18px 12mm 26px}
+  .hero::before{display:none}
+  .hero h1{font-size:28pt}
+  .hero .sub{font-size:12pt}
+  /* Six cells wrap to a ragged row on A4; three-up makes two even rows. */
+  .metrics{margin-top:26px; grid-template-columns:repeat(3,1fr)}
+  .metrics .v{font-size:17pt}
+  main{padding:0}
+  main > section:first-of-type{margin-top:26px}
+  section{break-before:page; page-break-before:always}
+  main > section:first-of-type{break-before:auto; page-break-before:auto}
+  section + section{margin-top:0}
+  .sec-head{margin-bottom:20px; padding-top:12px}
+  .sec-head h2{font-size:19pt}
+  .probs article, .sig article, .row, .row.key, .big6 li,
+  .inv ul.rest li, .note, .tw, .stack .r, .brief > div{break-inside:avoid; page-break-inside:avoid}
+  .probs article{padding:16px 0}
+  .probs h3{font-size:14pt}
+  .sig article{padding:16px 0}
+  .sig h3{font-size:14.5pt; max-width:34ch}
+  .sig .body{font-size:10pt; margin-top:8px}
+  .sig .prac{padding:9px 12px; margin-top:10px; font-size:9.5pt}
+  .sig .top{margin-bottom:9px}
+  .row, .row.key{padding-top:10px; padding-bottom:10px}
+  h3.grp{margin:22px 0 10px}
+  .big6{gap:18px 30px}
+  .inv{padding:26px 24px 28px}
+  .inv .hdp{margin-bottom:22px}
+  footer{break-before:page; page-break-before:always}
+  footer .wrap{padding:40px 12mm}
+}
+</style>
+
+<!-- ══════════ HERO ══════════ -->
+<header class="hero">
+  <div class="wrap">
+    <div class="herobar">
+      <div class="wordmark">Caut<span class="dot-i">i</span><span class="bl"></span>o</div>
+      <div class="meta"><span class="dotlive"></span> Live · 24×7 monitoring floor</div>
+    </div>
+
+    <div class="eyebrow">Fleet Intelligence · CRM · Platform Handbook</div>
+    <h1>Continuous dashcam footage, turned into <em>accountable human review</em>.</h1>
+    <p class="sub">Cautio's AI dashcams watch the road. This is the system that makes sure a person watched the footage — hour by hour, fleet by fleet, across a floor that never closes. It allocates the work, proves it was done, measures who did it, and reconstructs any day on demand.</p>
+
+    <div class="role"><b>In this document</b> · Every screen · Every rule · The engineering behind both</div>
+
+    <div class="metrics">
+      <div><div class="v">410</div><div class="k">Client fleets<br>under review</div></div>
+      <div><div class="v">30</div><div class="k">Concurrent<br>operators</div></div>
+      <div><div class="v">24×7</div><div class="k">Unbroken<br>coverage</div></div>
+      <div><div class="v">29</div><div class="k">Service<br>endpoints</div></div>
+      <div><div class="v">522</div><div class="k">Automated<br>checks</div></div>
+      <div><div class="v">0</div><div class="k">Databases<br>required</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="readbar" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="cols">
+
+    <nav class="toc" aria-label="Contents">
+      <h4>Contents</h4>
+      <ol>
+        <li><a href="#brief">The brief</a></li>
+        <li><a href="#problems">Engineering decisions</a></li>
+        <li><a href="#signature">What the platform does</a></li>
+        <li><a href="#invariants">Critical rules</a></li>
+        <li><a href="#board">Operator · Board</a></li>
+        <li><a href="#operator">Operator · Dashboard &amp; queues</a></li>
+        <li><a href="#attendance">Shift, break &amp; overtime</a></li>
+        <li><a href="#console-live">Supervisor · Live floor</a></li>
+        <li><a href="#console-day">Supervisor · Hour by hour</a></li>
+        <li><a href="#console-req">Supervisor · Requests</a></li>
+        <li><a href="#console-team">Supervisor · Team</a></li>
+        <li><a href="#engine">The engine room</a></li>
+        <li><a href="#integrity">Integrity &amp; anti-tamper</a></li>
+        <li><a href="#platform">Platform &amp; assurance</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <!-- ═══ BRIEF ═══ -->
+      <section id="brief">
+        <div class="sec-head">
+          <div class="kicker">Context</div>
+          <h2>The brief</h2>
+          <p>A monitoring floor is not a queue of tickets. It is a fixed amount of footage, a fixed number of hours, and a set of people who have to be matched to both — continuously, fairly, and provably.</p>
+        </div>
+
+        <div class="brief">
+          <div>
+            <div class="lbl">The problem</div>
+            <h3>Coverage that nobody could prove</h3>
+            <p>Around 410 client fleets need eyes on them through the day, each within its own contracted hours. Work was split by hand, tracked in spreadsheets, and reviewed after the fact. Nobody could answer the three questions that actually matter: <b>who is covering what right now</b>, <b>what has gone unwatched today</b>, and <b>how do we know</b>.</p>
+            <p>Attendance had the same shape. Hours were self-reported, breaks were remembered rather than recorded, and a night shift crossing midnight broke every total it touched.</p>
+          </div>
+          <div>
+            <div class="lbl">The response</div>
+            <h3>One system of record, two consoles</h3>
+            <p>Allocation, attendance, footage requests and performance were collapsed into a single platform with one computation behind every screen. Operators get a board that tells them exactly what to review this hour. Supervisors get a live floor, a reconstructable day, and figures they can defend.</p>
+            <p>It runs on the spreadsheets the business already trusted — no migration, no new database, no change to how the company stores its own data.</p>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="r"><div class="t">Interface</div><div class="v"><b>Next.js 14</b> · React · server-rendered pages and API routes, no client framework beyond React itself</div></div>
+          <div class="r"><div class="t">System of record</div><div class="v"><b>Google Sheets</b> · the business's own workbooks, read and written through a service account</div></div>
+          <div class="r"><div class="t">Runtime</div><div class="v"><b>Serverless</b> · every endpoint an isolated function, metered on active compute</div></div>
+          <div class="r"><div class="t">Scale</div><div class="v">~18,000 lines of application code · 29 endpoints · 43 interface modules</div></div>
+          <div class="r"><div class="t">Assurance</div><div class="v">~7,500 lines of tests · <b>522 automated checks</b> · browser render verification on every screen</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ ENGINEERING ═══ -->
+      <section id="problems">
+        <div class="sec-head">
+          <div class="kicker">Under load</div>
+          <h2>Engineering decisions</h2>
+          <p>Six problems that shaped the platform. Each one is a case where the obvious implementation was wrong, and the record shows why.</p>
+        </div>
+
+        <div class="probs">
+
+          <article>
+            <div class="no">Decision 01 · Time</div>
+            <h3>The day does not start at midnight</h3>
+            <div class="pq">
+              <div>
+                <h4>The failure</h4>
+                <p>A shift running 22:00 to 07:00 was split across two calendar dates. Its output landed under two days, its break totals under two days, and its score under neither. Every night-shift figure on the platform was wrong, and only on nights.</p>
+              </div>
+              <div>
+                <h4>The decision</h4>
+                <p>Every stored date became an <b>operating day</b> running 07:00 to 07:00, applied uniformly — allocation, attendance, scoring, ordering. Hour 6 is the last hour of a day, not the first. Time parsing was replaced everywhere with operating-day-aware equivalents.</p>
+              </div>
+            </div>
+            <div class="out"><b>Outcome:</b> a night shift is one continuous unit for measurement, pay and audit. Sixteen dedicated checks hold the boundary, including the hour either side of it.</div>
+          </article>
+
+          <article>
+            <div class="no">Decision 02 · Data layer</div>
+            <h3>A spreadsheet as a production datastore, inside its quota</h3>
+            <div class="pq">
+              <div>
+                <h4>The constraint</h4>
+                <p>The business's records live in Google Sheets, and the read allowance is <b>60 requests per minute for the whole platform</b> — not per user. Thirty dashboards polling continuously would exhaust it several times over, and a throttled floor is a stopped floor.</p>
+              </div>
+              <div>
+                <h4>The design</h4>
+                <p>Per-dataset caches with lifetimes matched to how fast each dataset actually changes; reads micro-batched into combined requests; related datasets prefetched together so a screen assembles from one round trip. Writes are throttled to meaningful movement only.</p>
+              </div>
+            </div>
+            <div class="out"><b>Outcome:</b> a simulated full floor draws <b>33–38 reads per minute</b> — comfortably inside the budget, with headroom for growth. Measured, not estimated.</div>
+          </article>
+
+          <article>
+            <div class="no">Decision 03 · Compute</div>
+            <h3>The metered resource was compute, not requests</h3>
+            <div class="pq">
+              <div>
+                <h4>The failure</h4>
+                <p>The platform was suspended mid-shift. Not for traffic — requests were well within allowance — but for <b>active compute</b>: twelve hours against four. Profiling showed the day plan being recomputed three times per poll from identical inputs.</p>
+              </div>
+              <div>
+                <h4>The decision</h4>
+                <p>The planner was memoised on an input signature, sharing one computation across every panel of a request. Cost was then measured directly against a simulated floor rather than assumed.</p>
+              </div>
+            </div>
+            <div class="out"><b>Outcome:</b> <b>51 ms → 13.6 ms</b> of compute per poll, and a projected monthly cost cut from roughly 22 hours to 6. The optimisation was chosen from a measurement, not a hunch.</div>
+          </article>
+
+          <article>
+            <div class="no">Decision 04 · Correctness</div>
+            <h3>Clients appeared to move on their own</h3>
+            <div class="pq">
+              <div>
+                <h4>The failure</h4>
+                <p>Operators reported clients shuffling between them with no shift change to explain it. The cause was a reference read returning <b>partially</b> under load: allocation is weighted by fleet size, so an incomplete set silently reweighted the entire floor.</p>
+              </div>
+              <div>
+                <h4>The decision</h4>
+                <p>Reads fail closed rather than returning half an answer. Concurrent requests for the same dataset collapse into one in-flight read. A result materially smaller than the last known-good one is rejected and the previous set retained.</p>
+              </div>
+            </div>
+            <div class="out"><b>Outcome:</b> allocation proved deterministic across fifty consecutive runs on identical inputs, and the partial-read case is pinned as a permanent regression check.</div>
+          </article>
+
+          <article>
+            <div class="no">Decision 05 · Integrity</div>
+            <h3>A browser extension built to defeat the attendance rule</h3>
+            <div class="pq">
+              <div>
+                <h4>The threat</h4>
+                <p>An extension was found on the floor whose only purpose was to stop the automatic break: it forced the idle reading to zero on every poll, synthesised mouse and keyboard events, patched the page's own timers, and clicked Resume if a break got through.</p>
+              </div>
+              <div>
+                <h4>The decision</h4>
+                <p>An extension runs with the page's privileges — it cannot be blocked from inside the page, and pretending otherwise would be theatre. So the signal was changed instead: for listed identities, inactivity is measured from <b>recorded work</b>, which no browser can fabricate. Separately, reported presence is cross-checked against output and disagreement is surfaced.</p>
+              </div>
+            </div>
+            <div class="out"><b>Outcome:</b> the rule became unspoofable from the client, without accusing anyone. Enforcement ships observe-only and is enabled deliberately, per identity.</div>
+          </article>
+
+          <article>
+            <div class="no">Decision 06 · Architecture</div>
+            <h3>Two screens quietly disagreeing about one person</h3>
+            <div class="pq">
+              <div>
+                <h4>The failure</h4>
+                <p>The same rule had been implemented twice — once for the operator's screen, once for the supervisor's. The copies drifted, and the two consoles began giving different answers about the same employee on the same day. It is the worst class of bug this system can have: both screens look correct.</p>
+              </div>
+              <div>
+                <h4>The decision</h4>
+                <p>Allocation, day-level coverage and scoring were each collapsed to a <b>single implementation</b> that both consoles call. Where a rule is shared, duplicating it is treated as a defect in its own right, and tests assert that no second copy exists.</p>
+              </div>
+            </div>
+            <div class="out"><b>Outcome:</b> the two consoles are the same computation by construction. Every defect since has been captured as a check before being fixed — 522 of them now stand.</div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ═══ CAPABILITIES ═══ -->
+      <section id="signature">
+        <div class="sec-head">
+          <div class="kicker">The short version</div>
+          <h2>What the platform does</h2>
+          <p>Ten capabilities that define the system. Everything documented after this exists to serve one of them.</p>
+        </div>
+
+        <div class="sig">
+          <article>
+            <div class="top"><span class="idx">01</span><span class="who">Operator · Supervisor · Automatic</span></div>
+            <h3>Work is allocated by fleet size, not by headcount</h3>
+            <p class="body">Operators do not choose what to review. Every hour, each receives a defined set of clients, ordered by fleet size so heavy accounts are spread instead of stacked on one person. The allocation is <b>computed once and read everywhere</b> — the operator's board and the supervisor's grid are the same calculation.</p>
+            <div class="prac"><span>In practice</span>Two operators with the same number of clients are carrying the same number of vehicles, so their output can be compared fairly.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">02</span><span class="who">Operator · Supervisor</span></div>
+            <h3>Nothing sits unreviewed for a day without being named</h3>
+            <p class="body">An hourly view cannot answer "who has been waiting since this morning" — a client untouched all day looks identical to one seen an hour ago. The platform tracks coverage at <b>day level</b>: clients nobody has reviewed since the day opened, counted once no matter how many operators held them.</p>
+            <div class="prac"><span>In practice</span>A supervisor can name every client that has gone unseen today, and which operator's hours the gap came from.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">03</span><span class="who">Operator · Automatic</span></div>
+            <h3>Attendance records itself, and records the truth</h3>
+            <p class="body">Clock-in, clock-out, breaks, early starts, overtime and week-offs are captured as they happen. Ten minutes without activity opens a break automatically — <b>backdated to the moment work actually stopped</b>, not the moment it was noticed.</p>
+            <div class="prac"><span>In practice</span>A machine left running cannot hold a shift artificially active, and nobody has to remember to log anything.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">04</span><span class="who">Operator · Supervisor</span></div>
+            <h3>Performance is one number, and the working is shown</h3>
+            <p class="body">A 100-point score built from footage share, vehicles reviewed and break discipline. The operator sees the score <b>and every figure behind it</b>. The supervisor sees the whole floor as cards. Both read the same computation.</p>
+            <div class="prac"><span>In practice</span>Nobody is handed a rating they cannot check, and the two screens can never quote different numbers for the same person.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">05</span><span class="who">Operator · Supervisor</span></div>
+            <h3>Work never falls through a shift change</h3>
+            <p class="body">A footage request that cannot be finished before a shift ends is forwarded to a named colleague and arrives as a tracked follow-up. The receiving operator gets an amber indicator that <b>follows them across every screen</b> and animates periodically until the queue is clear.</p>
+            <div class="prac"><span>In practice</span>Nothing gets closed just to make a shift look finished, and the incoming operator cannot miss what they inherited.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">06</span><span class="who">Supervisor · Automatic</span></div>
+            <h3>An absence reallocates the floor in seconds, with an audit trail</h3>
+            <p class="body">A supervisor marks leave — a full day or a specific window — and that operator's clients are redistributed across the remaining floor immediately. Every movement is written to a log naming <b>source, destination, client and hour</b>.</p>
+            <div class="prac"><span>In practice</span>An unplanned absence does not leave clients unwatched, and the day can still be explained afterwards, line by line.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">07</span><span class="who">Supervisor</span></div>
+            <h3>Any day can be reopened and read in full</h3>
+            <p class="body">Every operator against every hour, with attendance, output, breaks and follow-ups — and the shift window shown in <b>both forms where they differ</b>: as rostered, and as actually worked after an early start or approved overtime.</p>
+            <div class="prac"><span>In practice</span>A question about last Tuesday is answered from the record, not from memory.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">08</span><span class="who">Platform · Automatic</span></div>
+            <h3>One identity, one active session</h3>
+            <p class="body">Signing in anywhere terminates every other session for that identity. One name cannot be worked from two desks, an abandoned machine cannot keep reporting presence, and a break opened at one desk cannot be resumed from another.</p>
+            <div class="prac"><span>In practice</span>Attendance always describes the desk somebody is actually sitting at.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">09</span><span class="who">Supervisor · Automatic</span></div>
+            <h3>Reported presence is cross-checked against recorded work</h3>
+            <p class="body">The browser says somebody is at their desk; the record shows what they produced. When the two disagree, the platform surfaces it. Where presence cannot be taken at face value, inactivity is measured from <b>recorded work instead of the browser</b> — a signal that cannot be simulated from inside a tab.</p>
+            <div class="prac"><span>In practice</span>Attendance figures hold up even against deliberate attempts to manipulate them.</div>
+          </article>
+
+          <article>
+            <div class="top"><span class="idx">10</span><span class="who">Supervisor</span></div>
+            <h3>The record starts before the platform did</h3>
+            <p class="body">Work recorded in the months before this system existed is carried forward in the same shape as live data. Monthly totals are kept as monthly totals — never sliced into days they cannot honestly be divided into.</p>
+            <div class="prac"><span>In practice</span>Year-on-year reporting is possible from day one, without pretending the year began when the software did.</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ═══ RULES ═══ -->
+      <section id="invariants">
+        <div class="sec-head">
+          <div class="kicker">Foundations</div>
+          <h2>Critical rules</h2>
+          <p>These are the decisions everything else is built on. They are enforced in code, verified automatically on every change, and they are the reason two screens can never give two answers to the same question.</p>
+        </div>
+
+        <div class="inv">
+          <div class="hd">The six that matter most</div>
+          <div class="hdl">Get these wrong and the numbers stop meaning anything</div>
+          <p class="hdp">Each of these protects a figure somebody is measured, paid or audited on. They are absolute — there is no configuration that turns them off.</p>
+
+          <ol class="big6">
+            <li>
+              <h4>The operating day runs 07:00 to 07:00</h4>
+              <p>Every date the platform records is an <b>operating day</b>, not a calendar date. Work logged at 02:00 belongs to the shift that began the evening before. Without this, every night shift is split across two days and neither total is true.</p>
+            </li>
+            <li>
+              <h4>One rule, one implementation</h4>
+              <p>Allocation, coverage and scoring each exist <b>exactly once</b>, and every screen calls the same code. A rule that is copied is a rule that drifts — and two screens quietly disagreeing about the same person is the worst failure this system can have.</p>
+            </li>
+            <li>
+              <h4>A break is backdated to when work stopped</h4>
+              <p>Not to when inactivity was detected. A closed laptop and a walked-away desk both produce an <b>accurate</b> record rather than a flattering one, because the gap is measured from the last real activity.</p>
+            </li>
+            <li>
+              <h4>Partial data is never treated as fact</h4>
+              <p>If reference data cannot be read in full, the platform keeps the last complete answer rather than adopting the incomplete one. A partial read would <b>silently reweight the entire floor</b> and move clients nobody asked to move.</p>
+            </li>
+            <li>
+              <h4>Attendance history is never deleted</h4>
+              <p>Corrections mark superseded records instead of removing them. What was recorded, and what was later corrected, <b>both stay auditable</b> — an attendance trail that can be quietly rewritten is not a record at all.</p>
+            </li>
+            <li>
+              <h4>Nobody is scored for a day they did not work</h4>
+              <p>Scoring applies only to operators the operating day actually belongs to. An absent operator gets <b>no score rather than a misleading one</b> — a flattering number for a day somebody was not there is worse than no number.</p>
+            </li>
+          </ol>
+
+          <ul class="rest">
+            <li><span class="b">▸</span><div><strong>Allocation is deterministic</strong><span>Same inputs, same split, every time. Clients never move without a real event, and every move is logged.</span></div></li>
+            <li><span class="b">▸</span><div><strong>Overlapping absences count once</strong><span>Break totals are the union of intervals, not the sum of rows. Nobody is charged twice for one minute.</span></div></li>
+            <li><span class="b">▸</span><div><strong>The most recent record wins</strong><span>Where a client is reviewed twice, the later entry is authoritative — and the earlier one remains for the trail.</span></div></li>
+            <li><span class="b">▸</span><div><strong>A save writes the whole record</strong><span>Every field is submitted together, so a partial write can never blank what the operator did not touch.</span></div></li>
+            <li><span class="b">▸</span><div><strong>A long break does not reassign work</strong><span>Time away never moves somebody's clients. The board an operator returns to is the board they left.</span></div></li>
+            <li><span class="b">▸</span><div><strong>Enforcement is opt-in, never silent</strong><span>Any rule that can restrict a person is observed first and enabled deliberately. The platform reports before it acts.</span></div></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ═══ BOARD ═══ -->
+      <section id="board">
+        <div class="sec-head">
+          <div class="kicker">Operator workspace</div>
+          <h2>The Board</h2>
+          <p>Where the shift is actually worked. The full hour on the left, one client's complete record on the right, and the shift itself laid out above both.</p>
+        </div>
+
+        <h3 class="grp">Shift context</h3>
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Hour rail</div><div class="ds">The entire shift as one strip, hour by hour, with completed and outstanding counts on each. Any hour can be opened and worked — earlier or later. The board is not locked to the hour in progress.</div></div>
+          <div class="row"><div class="nm">Today rail</div><div class="ds">Alongside the board: the day's running totals, a preview of the next hour's allocation, and anything outstanding — including waiting follow-ups.</div></div>
+          <div class="row"><div class="nm">Context banners</div><div class="ds">When a different hour is being viewed, or the shift has not started, has ended, or the hour is upcoming, the board states it explicitly rather than silently showing different data.</div></div>
+          <div class="row"><div class="nm">Read-only states</div><div class="ds">Outside an active shift the board stays fully visible but cannot be edited. History remains readable without being alterable.</div></div>
+        </div>
+
+        <h3 class="grp">The client list</h3>
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Priority ordering</div><div class="ds">Clients nobody has reviewed today sit at the top. Below them, the day in the order it happened — the 08:00 review above the 10:00, the 10:00 above the noon. Ordering follows the operating day, so a 02:00 night-shift review sorts to the end of the day it belongs to rather than the start of a morning it does not.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Status line</div><div class="ds">One line per client, in three states — <span class="chip g">Green</span> reviewed by you · <span class="chip a">Amber</span> reviewed by a colleague, with time and name · <span class="chip r">Red</span> not reviewed by anyone today.</div></div>
+          <div class="row"><div class="nm">Filters and search</div><div class="ds">Pending, Done and All, each carrying a live count, plus free-text search across client names.</div></div>
+          <div class="row"><div class="nm">Row indicators</div><div class="ds">Fleet size, <span class="chip n">yours</span> for a specifically assigned client, <span class="chip n">↩ name</span> when it arrived by redistribution, <span class="chip a">UNSAVED</span> for uncommitted edits, and a completion mark once saved.</div></div>
+        </div>
+
+        <div class="demo" aria-label="Example of the client list">
+          <div><div class="cl">Instant Panthers</div><div class="mt">10 vehicles · <span class="up">Updated 03:30 pm · Nesiya</span></div></div>
+          <div><div class="cl">SRI SIDDHAN TRAVELS</div><div class="mt">4 vehicles · <span class="me">Updated 11:20 am</span></div></div>
+          <div><div class="cl">Anshi Travels</div><div class="mt">6 vehicles · <span class="no">Still not updated</span></div></div>
+        </div>
+
+        <h3 class="grp">The client record</h3>
+        <div class="rows">
+          <div class="row"><div class="nm">Live vehicles checked</div><div class="ds">How many of the client's vehicles were live on screen during the review. This figure feeds the vehicle component of the performance score.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Status</div><div class="ds">Updated · No New Misalignment · All Vehicles are Offline · No Misalignment. <b>This field is what marks the client complete</b> — without it the client stays outstanding, on every screen that counts it.</div></div>
+          <div class="row"><div class="nm">Alert count</div><div class="ds">Alerts raised against the client during the reviewed hour.</div></div>
+          <div class="row"><div class="nm">Misaligned vehicles</div><div class="ds">Registration numbers of cameras found out of position, comma-separated — <code>KA01AB1234, KA02CD5678</code>.</div></div>
+          <div class="row"><div class="nm">Fatigue</div><div class="ds">Whether driver-fatigue events were observed, and how many.</div></div>
+          <div class="row"><div class="nm">Notes</div><div class="ds">Free-text observations attached to the client-hour.</div></div>
+          <div class="row"><div class="nm">Record header</div><div class="ds">Client name, state — <span class="chip n">PENDING</span> / <span class="chip g">DONE</span> / <span class="chip a">UNSAVED</span> — fleet size, the hour being worked, who handed the client over if it was redistributed, and the last review recorded against it by anyone.</div></div>
+          <div class="row"><div class="nm">Ad-hoc client entry</div><div class="ds">A record can be filed against a client outside the hour's allocation, so unscheduled work is captured rather than lost.</div></div>
+        </div>
+
+        <h3 class="grp">Working at speed</h3>
+        <div class="rows">
+          <div class="row"><div class="nm">Save</div><div class="ds"><kbd>Ctrl</kbd> + <kbd>S</kbd>, or <kbd>⌘</kbd> + <kbd>S</kbd>. The saved row flashes briefly — confirmation that does not need reading.</div></div>
+          <div class="row"><div class="nm">Move between clients</div><div class="ds"><kbd>Alt</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd>, or the Prev and Next controls. Plain arrow keys are deliberately left to the fields being typed in.</div></div>
+          <div class="row"><div class="nm">Save all</div><div class="ds">Every client edited in the current hour is committed in one action.</div></div>
+          <div class="row"><div class="nm">Continuous refresh</div><div class="ds">The board refreshes itself every 30 seconds. Nobody reloads a page to see current state.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ OPERATOR ═══ -->
+      <section id="operator">
+        <div class="sec-head">
+          <div class="kicker">Operator workspace</div>
+          <h2>Dashboard and queues</h2>
+          <p>The command bar stays pinned across every screen: identity, roster window, clock-in state, the operating date, the running clock, and the notification indicator.</p>
+        </div>
+
+        <h3 class="grp">Dashboard</h3>
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Performance score</div><div class="ds">Today's score with all three components broken out, each shown alongside the raw figures it came from — so the number can be verified rather than merely accepted.</div></div>
+          <div class="row"><div class="nm">Daily targets</div><div class="ds">Clients allocated, records filed, and follow-ups closed against follow-ups received.</div></div>
+          <div class="row"><div class="nm">Follow-up breakdown</div><div class="ds">Closed against pending as a single chart, which opens the Follow-ups queue when selected.</div></div>
+          <div class="row"><div class="nm">Trend and calendar</div><div class="ds">Output across recent days, and a month view showing which days were worked and how heavily.</div></div>
+          <div class="row"><div class="nm">Top clients</div><div class="ds">The accounts this operator has spent the most of the period on.</div></div>
+          <div class="row"><div class="nm">Recent activity</div><div class="ds">A time-ordered record of the day's actions, including closed follow-ups.</div></div>
+          <div class="row"><div class="nm">Notifications</div><div class="ds">Outstanding items surfaced as actionable entries that navigate straight to the relevant screen.</div></div>
+        </div>
+
+        <h3 class="grp">Footage requests</h3>
+        <div class="rows">
+          <div class="row"><div class="nm">Request queue</div><div class="ds">Every footage request raised under this operator's name, open and completed, with client, vehicle, timestamp, channel and the detail of what was asked for.</div></div>
+          <div class="row"><div class="nm">Completion</div><div class="ds">Requests are closed from the queue once the footage has been supplied.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Forwarding</div><div class="ds">A request that cannot be completed before the shift ends is forwarded to a named colleague and arrives on their screen as a tracked <b>follow-up</b>. Nothing is closed to make a shift look finished.</div></div>
+          <div class="row"><div class="nm">End-of-shift prompt</div><div class="ds">Ending a shift with open requests surfaces them at that moment, so the handover decision is made deliberately.</div></div>
+        </div>
+
+        <h3 class="grp">Follow-ups</h3>
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Inherited work</div><div class="ds">Requests handed over by other operators, each showing client, vehicle, originator and time received, closed from the same screen once resolved.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Persistent indicator</div><div class="ds">While any follow-up is open, the command-bar indicator turns amber, carries the count, and animates briefly every few seconds. Because the command bar is pinned, it stays visible on every screen; selecting it opens the queue directly.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ ATTENDANCE ═══ -->
+      <section id="attendance">
+        <div class="sec-head">
+          <div class="kicker">Operator workspace</div>
+          <h2>Shift, break and overtime</h2>
+          <p>Attendance is captured as a by-product of working, not as a separate task.</p>
+        </div>
+
+        <div class="rows">
+          <div class="row"><div class="nm">Start shift</div><div class="ds">A single action. Starting ahead of the rostered window is recorded as an early start, and the board opens against the effective window rather than the scheduled one.</div></div>
+          <div class="row"><div class="nm">Manual break</div><div class="ds">Opens a full-screen state that suspends work until resumed, so a break is unambiguous on both sides of the record.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Automatic break</div><div class="ds">Ten minutes without recorded activity opens a break automatically, <b>backdated to the moment activity stopped</b>. A machine left open cannot hold a shift artificially active.</div></div>
+          <div class="row"><div class="nm">Overtime</div><div class="ds">Extends the shift by three hours, once per operating day, and extends the board's hours to match.</div></div>
+          <div class="row"><div class="nm">End shift</div><div class="ds">Closes the shift. Past the rostered window the action is promoted so it cannot be overlooked.</div></div>
+          <div class="row"><div class="nm">Automatic close</div><div class="ds">A shift left open is closed by the platform after a thirty-minute grace period, so no record runs indefinitely.</div></div>
+          <div class="row"><div class="nm">Break ledger</div><div class="ds">Every break of the day with start, end and duration, plus the day's total — counted as the union of intervals so overlapping records are never double-charged.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Cross-midnight continuity</div><div class="ds">A shift and any break opened within it remain the same records after midnight. A break started at 23:52 is still resolvable at 00:05 — the case that breaks most attendance systems.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ CONSOLE LIVE ═══ -->
+      <section id="console-live">
+        <div class="sec-head">
+          <div class="kicker">Supervisor console</div>
+          <h2>The live floor</h2>
+          <p>The opening screen answers the questions a supervisor asks before anything else. Every figure links into the detail behind it.</p>
+        </div>
+
+        <h3 class="grp">Command strip</h3>
+        <div class="rows">
+          <div class="row"><div class="nm">Clocked in</div><div class="ds">Present against expected, changing state once attendance falls below the acceptable threshold.</div></div>
+          <div class="row"><div class="nm">Completed / outstanding</div><div class="ds">Client-hours reviewed so far today, and client-hours still open.</div></div>
+          <div class="row"><div class="nm">Not in · On break · Footage open · Redistributed</div><div class="ds">Operators who have not started, operators currently away, open footage requests, and work reassigned today — each opening the corresponding screen.</div></div>
+        </div>
+
+        <h3 class="grp">Floor panels</h3>
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Attendance register</div><div class="ds">Clock-in, clock-out and total break time for every operator in one register — the three figures that determine a day, side by side rather than spread across three screens.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Floor state</div><div class="ds">Every operator grouped by state — <span class="chip g">Active</span> <span class="chip n">Ended</span> <span class="chip a">Left open</span> <span class="chip a">Week off</span> <span class="chip r">Not started</span> <span class="chip n">Off shift</span> — each with progress against their allocation.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Workload</div><div class="ds">Clients scheduled, vehicles they represent, and vehicles actually reviewed — held as two separate readings: <b>so far</b>, cumulative to the current hour, and <b>whole day</b>. A half-finished day is never measured against a full day's target.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Performance board</div><div class="ds">Every operator's score as a compact card, the full floor visible at once, with a date selector for previous days. Selecting a card reveals the working. It is the same computation the operator sees on their own screen.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Activity integrity</div><div class="ds">Surfaces disagreement between reported presence and recorded output. It stays empty when there is nothing to report — it never manufactures a finding.</div></div>
+          <div class="row"><div class="nm">Historical record</div><div class="ds">Monthly totals from before the platform, presented as their own block. A month is a lump sum and cannot be divided into days, so it is kept separate from date-range reporting rather than distorting it.</div></div>
+          <div class="row"><div class="nm">Configuration alerts</div><div class="ds">Two specific conditions are flagged: clients that cannot be allocated to anyone, and clients the reference data cannot resolve. Clearing either restores allocation automatically.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ CONSOLE DAY ═══ -->
+      <section id="console-day">
+        <div class="sec-head">
+          <div class="kicker">Supervisor console</div>
+          <h2>Hour by hour</h2>
+          <p>Any single operating day, reconstructed completely.</p>
+        </div>
+
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Full day view</div><div class="ds">Every operator against every hour in one grid, with the shift window shown in both forms where they differ — <b>as rostered</b> and <b>as worked</b> — so early starts and approved overtime are visible rather than inferred. Per-operator totals and follow-ups sit beneath.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Leave and redistribution</div><div class="ds">Leave is marked for a full day or a specific hour range with a reason. The affected allocation is redistributed across the remaining floor immediately, and every movement is written to the audit log.</div></div>
+          <div class="row"><div class="nm">Redistribution log</div><div class="ds">Work moved today: source operator, destination operator, client, hour and reason.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Day-level coverage</div><div class="ds">Clients untouched since the day began, with a per-operator breakdown showing where the gaps originated. Every other view treats an hour in isolation; this one measures the day as a whole.</div></div>
+          <div class="row"><div class="nm">Export</div><div class="ds">The complete day as CSV.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ CONSOLE REQUESTS ═══ -->
+      <section id="console-req">
+        <div class="sec-head">
+          <div class="kicker">Supervisor console</div>
+          <h2>Requests</h2>
+          <p>The footage pipeline end to end, from the moment a request is raised to the moment it is closed — including everything that crossed a shift boundary.</p>
+        </div>
+
+        <div class="rows">
+          <div class="row"><div class="nm">Request register</div><div class="ds">All footage requests with client, vehicle, who raised it, when, through which channel, the sub-request and incident type, remarks, assignment, location and resolution state.</div></div>
+          <div class="row"><div class="nm">Status</div><div class="ds"><span class="chip n">Pending</span> still with the originator · <span class="chip a">Forwarded</span> handed to another operator as a follow-up.</div></div>
+          <div class="row"><div class="nm">Ranges and filters</div><div class="ds">Today, this week, this month or a custom range, filtered further by operator and client.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Follow-up oversight</div><div class="ds">Every request that crossed a shift boundary, who holds it and since when — the queue that would otherwise be invisible to management. Supervisors can close from here.</div></div>
+          <div class="row"><div class="nm">Export</div><div class="ds">The filtered view exactly as displayed, as CSV.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ CONSOLE TEAM ═══ -->
+      <section id="console-team">
+        <div class="sec-head">
+          <div class="kicker">Supervisor console</div>
+          <h2>Team</h2>
+          <p>Performance across periods rather than within a single day.</p>
+        </div>
+
+        <div class="rows">
+          <div class="row"><div class="nm">Attendance &amp; output</div><div class="ds">Any date range — two days, a week, a month. Per operator: days worked, records filed, clients covered, vehicles reviewed, break time and a performance score. Days that were not worked are excluded rather than scored as zero.</div></div>
+          <div class="row"><div class="nm">Break analysis</div><div class="ds">Break time per operator, session counts, and how many were opened automatically. An operator currently on break has their elapsed time increment live on screen.</div></div>
+          <div class="row"><div class="nm">Operator timeline</div><div class="ds">One person's day reconstructed in sequence — shift events, reviews, breaks and follow-ups in the order they occurred.</div></div>
+          <div class="row"><div class="nm">Roster configuration</div><div class="ds">Shift windows, night-shift designation, week-offs and per-operator hour overrides are held as configuration and applied automatically to allocation and attendance.</div></div>
+          <div class="row"><div class="nm">Daily report</div><div class="ds">The full day exported as a single CSV.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ ENGINE ═══ -->
+      <section id="engine">
+        <div class="sec-head">
+          <div class="kicker">Under the hood</div>
+          <h2>The engine room</h2>
+          <p>Nobody operates these. They run continuously, and the accuracy of every screen depends on them.</p>
+        </div>
+
+        <h3 class="grp">Performance scoring</h3>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Component</th><th>Weight</th><th>Basis</th></tr></thead>
+            <tbody>
+              <tr><td>Footage</td><td class="num">40</td><td>Share of the day's total footage requests raised under this operator. The heaviest single weight, because every request represents a customer waiting.</td></tr>
+              <tr><td>Vehicles</td><td class="num">60</td><td>Vehicles reviewed against a target of 800. Full credit at target, no additional credit beyond it, and no cliff for falling slightly short.</td></tr>
+              <tr><td>Break</td><td class="num">−20</td><td>Applied when the day's total break time exceeds one hour, measured as the union of intervals.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="color:var(--ink-2); font-size:14.5px">The computation exists once. The operator's score and the supervisor's card are the same number by construction, not by coincidence.</p>
+
+        <h3 class="grp">Allocation</h3>
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Weighted distribution</div><div class="ds">Clients are ordered by fleet size and assigned heaviest-first, so total <b>vehicle load</b> is balanced rather than client count. Every client carries at least unit weight, so an account with no fleet data on file is still allocated rather than dropped.</div></div>
+          <div class="row"><div class="nm">Client review windows</div><div class="ds">Each client carries its own hours, and is only ever allocated within the window it is contracted for.</div></div>
+          <div class="row"><div class="nm">Roster awareness</div><div class="ds">Allocation respects shift windows, night shifts, week-offs, per-operator hour overrides, approved leave and overtime — all applied from the same computation.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Stability under load</div><div class="ds">Concurrent requests for the same reference data are collapsed into a single read, and a reference set that returns materially smaller than the last known-good one is rejected rather than adopted. This is what stops clients appearing to shuffle when nothing on the floor has changed.</div></div>
+        </div>
+
+        <h3 class="grp">Data layer</h3>
+        <div class="rows">
+          <div class="row"><div class="nm">Read budgeting</div><div class="ds">The platform works within a fixed read allowance shared across the whole floor. Reads are cached with per-dataset lifetimes, batched into combined requests, and prefetched together, so a screen assembles from one round trip rather than a dozen.</div></div>
+          <div class="row"><div class="nm">Write economy</div><div class="ds">Activity timestamps are written only when they have moved meaningfully, and are stored on the existing shift record rather than a separate log — no extra dataset to maintain, and no write amplification from routine polling.</div></div>
+          <div class="row"><div class="nm">Computation caching</div><div class="ds">The day plan is computed once per set of inputs and reused within its lifetime, rather than recalculated for every panel that displays it.</div></div>
+          <div class="row"><div class="nm">Daily rollup</div><div class="ds">Each operating day condenses to one row per operator, which keeps long-range reporting fast without retaining every client-hour indefinitely — and is the same shape historical records were imported into.</div></div>
+          <div class="row"><div class="nm">Graceful degradation</div><div class="ds">If a dataset is briefly unavailable, screens render what they can and state what is missing. A partial failure does not take down a working floor.</div></div>
+        </div>
+      </section>
+
+      <!-- ═══ INTEGRITY ═══ -->
+      <section id="integrity">
+        <div class="sec-head">
+          <div class="kicker">Under the hood</div>
+          <h2>Integrity and anti-tamper</h2>
+          <p>Attendance that measures itself has to be resistant to being told what to measure. This is how that is handled.</p>
+        </div>
+
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Two clocks, cross-checked</div><div class="ds">The browser reports presence; the record shows output. When one insists an operator has been at their desk all afternoon and the other shows no work in that period, the platform flags the disagreement for a supervisor rather than trusting either side.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Work-based inactivity</div><div class="ds">Where browser-reported presence cannot be relied on, inactivity is measured from <b>recorded work</b> instead. The automatic break is then driven by output — a signal that cannot be simulated from inside a browser tab.</div></div>
+          <div class="row"><div class="nm">Supervisor-controlled</div><div class="ds">That stricter measurement applies only to identities a supervisor has listed, and can be suspended per identity at any time. It is configuration, not a code change, and takes effect within minutes.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Session enforcement</div><div class="ds">One active session per identity. A second sign-in ends the first, closing the gap where an unattended machine could keep a shift looking alive, or a break opened at one desk could be resumed from another.</div></div>
+          <div class="row"><div class="nm">Resume is verified presence</div><div class="ds">Ending a break counts as confirmed presence in its own right, so an operator returning to work is never immediately placed back on break by the same rule that opened it.</div></div>
+          <div class="row"><div class="nm">Reopen protection</div><div class="ds">Guards prevent a break being reopened moments after it was closed, and prevent duplicate break records from concurrent requests.</div></div>
+        </div>
+
+        <div class="note"><b>Design position.</b> None of this is enforcement for its own sake. Every mechanism here exists so an honest operator's record is accurate, and so a supervisor comparing two people is comparing like with like. Restrictive behaviour is introduced in observe-only mode first, and enabled deliberately.</div>
+      </section>
+
+      <!-- ═══ PLATFORM ═══ -->
+      <section id="platform">
+        <div class="sec-head">
+          <div class="kicker">Foundations</div>
+          <h2>Platform and assurance</h2>
+          <p>How the system is built, secured and verified.</p>
+        </div>
+
+        <h3 class="grp">Access</h3>
+        <div class="rows">
+          <div class="row"><div class="nm">Roles</div><div class="ds">Two: operator and supervisor. The role determines which console loads and what each interface may read and write, enforced server-side on every request rather than by hiding controls.</div></div>
+          <div class="row"><div class="nm">Signed sessions</div><div class="ds">Authentication issues a signed token held in an HTTP-only cookie. Every endpoint verifies identity and role independently.</div></div>
+          <div class="row"><div class="nm">Session registry</div><div class="ds">The current sign-in for each identity is recorded centrally, which is what makes single-session enforcement reliable across devices.</div></div>
+        </div>
+
+        <h3 class="grp">Assurance</h3>
+        <div class="rows">
+          <div class="row key"><div class="nm"><i>Key</i>Automated verification</div><div class="ds"><b>522 automated checks</b> across 24 suites — allocation, attendance, breaks, night-shift boundaries, scoring, coverage, caching and interface behaviour. Roughly 7,500 lines of tests against 18,000 lines of application code. Every change runs the full suite before it ships.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Isolated test harness</div><div class="ds">Tests run against a simulated data layer, so the entire suite can be executed mid-shift without reading or writing a single row of live data.</div></div>
+          <div class="row"><div class="nm">Interface verification</div><div class="ds">Every screen, operator and supervisor, is rendered in a real browser against controlled data and checked for failure before release — the class of fault server-side testing cannot catch.</div></div>
+          <div class="row key"><div class="nm"><i>Key</i>Regression capture</div><div class="ds">Every defect found in production is turned into a permanent check <b>before</b> it is fixed, so it cannot return unnoticed. The suite is a record of everything that has ever gone wrong and has been made impossible since.</div></div>
+          <div class="row"><div class="nm">Capacity measurement</div><div class="ds">Compute cost per request and read volume are measured directly against a simulated full floor, so scaling decisions rest on figures rather than estimates.</div></div>
+          <div class="row"><div class="nm">Fault containment</div><div class="ds">Interface faults are contained to the panel they occur in. One failing component does not take the screen down.</div></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="wordmark">Caut<span class="dot-i">i</span><span class="bl"></span>o</div>
+      <div class="ft">AI-powered dashcams built for Bharat, trusted by fleets globally.</div>
+    </div>
+    <div class="fm">Command Center<br>Platform Handbook</div>
+  </div>
+</footer>
+
+<script>
+/* Place the green tittle exactly over the "i".
+   The disc's position is taken from the face that actually rendered rather
+   than assumed: a hidden canvas draws an "i" at a large size, finds the
+   detached blob above the stem, and expresses it in ems of the baseline. A
+   zero-size inline-block next to the letter marks where that baseline is on
+   the page, so the result holds at any font size and survives a fallback. */
+(function () {
+  function measure(font) {
+    var F = 240, c = document.createElement('canvas');
+    c.width = 400; c.height = 480;
+    var x = c.getContext('2d');
+    x.font = font.replace(/\b\d+(\.\d+)?px\b/, F + 'px');
+    x.textBaseline = 'alphabetic';
+    x.fillStyle = '#000';
+    x.fillText('i', 60, 380);
+    var d;
+    try { d = x.getImageData(0, 0, 400, 480).data } catch (e) { return null }
+    var rows = [];
+    for (var y = 0; y < 480; y++) {
+      var lo = -1, hi = -1;
+      for (var px = 0; px < 400; px++) {
+        if (d[(y * 400 + px) * 4 + 3] > 40) { if (lo < 0) lo = px; hi = px }
+      }
+      rows.push([lo, hi]);
+    }
+    var top = -1, bottom = -1, minX = 1e9, maxX = -1;
+    for (var y2 = 0; y2 < 480; y2++) {
+      if (rows[y2][0] >= 0) { if (top < 0) top = y2 }
+      else if (top >= 0) { bottom = y2 - 1; break }
+    }
+    if (top < 0 || bottom < 0) return null;
+    for (var y3 = top; y3 <= bottom; y3++) {
+      if (rows[y3][0] >= 0) {
+        if (rows[y3][0] < minX) minX = rows[y3][0];
+        if (rows[y3][1] > maxX) maxX = rows[y3][1];
+      }
+    }
+    var h = (bottom - top + 1) / F;
+    if (h <= 0 || h > 0.4) return null;          /* not a tittle — keep the CSS fallback */
+    return { above: (380 - top) / F, size: h, cx: ((minX + maxX) / 2 - 60) / F };
+  }
+
+  function place() {
+    var marks = document.querySelectorAll('.wordmark');
+    if (!marks.length) return;
+    var cs = getComputedStyle(marks[0]);
+    var m = measure(cs.font || (cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily));
+    if (!m) return;
+    for (var i = 0; i < marks.length; i++) {
+      var el = marks[i], dot = el.querySelector('.dot-i'), bl = el.querySelector('.bl');
+      if (!dot || !bl) continue;
+      var size = parseFloat(getComputedStyle(el).fontSize);
+      var dr = dot.getBoundingClientRect(), br = bl.getBoundingClientRect();
+      dot.style.setProperty('--dot-y', ((br.bottom - m.above * size) - dr.top).toFixed(2) + 'px');
+      dot.style.setProperty('--dot-d', (m.size * size * 1.06).toFixed(2) + 'px');
+      /* Centre on the tittle itself, not on the span: negative letter-spacing
+         is added after the glyph, so the two are not the same point. */
+      dot.style.setProperty('--dot-x', (m.cx * size).toFixed(2) + 'px');
+    }
+  }
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+  else window.addEventListener('load', place);
+  window.addEventListener('resize', place);
+})();
+</script>
+
+<script>
+/* Marks the section being read in the contents rail and drives the progress
+   hairline. Both are read-only conveniences: with JS off the page is
+   unchanged, and neither affects printing. */
+(function () {
+  var bar = document.querySelector('.readbar');
+  var links = [].slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var targets = links.map(function (a) {
+    return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+  }).filter(function (t) { return t.el; });
+
+  var current = null;
+  function update() {
+    if (bar) {
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, window.scrollY / max) : 0) + ')';
+    }
+    // The section whose top has most recently passed a quarter of the viewport.
+    var line = window.innerHeight * 0.25, found = targets[0];
+    for (var i = 0; i < targets.length; i++) {
+      if (targets[i].el.getBoundingClientRect().top <= line) found = targets[i];
+    }
+    if (found && found.link !== current) {
+      if (current) current.removeAttribute('aria-current');
+      found.link.setAttribute('aria-current', 'true');
+      current = found.link;
+    }
+  }
+
+  var queued = false;
+  function onScroll() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () { queued = false; update(); });
+  }
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+  update();
+})();
+</script>
+
+</body>
+</html>
